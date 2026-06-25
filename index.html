@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="th" data-theme="light">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>สมุดบัญชี — บันทึกรายรับรายจ่าย</title>
-<meta name="description" content="แอปบันทึกรายรับรายจ่าย อ่านสลิปอัตโนมัติ สรุปรายเดือน/รายปี และงบประมาณ">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>สมุดบัญชีครอบครัว — บันทึกรายรับรายจ่าย</title>
+<meta name="description" content="แอปบันทึกรายรับรายจ่ายสำหรับครอบครัว อ่านสลิปอัตโนมัติ สรุปรายเดือน/รายปี งบประมาณ และโปรไฟล์สมาชิก">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#0F4C4A">
+<meta name="theme-color" content="#C2693E" id="themeColorMeta">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -20,223 +20,337 @@
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
   :root{
-    --bg:#F2F4F1; --surface:#FFFFFF; --ink:#172622; --ink-soft:#5E6B67;
-    --line:#E4E8E3; --primary:#0F4C4A; --primary-soft:#E4EEED;
-    --income:#1F9D6B; --income-soft:#E7F4EE;
-    --expense:#D24A40; --expense-soft:#FBEAE8;
-    --accent:#B98A2E; --shadow:0 1px 2px rgba(23,38,34,.05),0 8px 24px rgba(23,38,34,.06);
-    --r:14px;
+    --bg:#FBF6EF; --surface:#FFFFFF; --surface-2:#F6EFE5;
+    --ink:#2C2722; --ink-soft:#94867A; --ink-faint:#B6AA9C;
+    --line:#ECE1D4; --line-soft:#F2EADF;
+    --primary:#C2693E; --primary-deep:#A8552F; --primary-soft:#F8E7DB;
+    --income:#3F9468; --income-soft:#E6F3EC;
+    --expense:#C0473C; --expense-soft:#FBE7E4;
+    --accent:#D99A3C; --accent-soft:#F8EDD6;
+    --shadow:0 1px 2px rgba(44,39,34,.05),0 10px 30px rgba(44,39,34,.07);
+    --shadow-sm:0 1px 2px rgba(44,39,34,.06);
+    --shadow-lg:0 12px 34px rgba(44,39,34,.14);
+    --r:18px; --r-sm:13px;
+  }
+  [data-theme="dark"]{
+    --bg:#1C1916; --surface:#27221E; --surface-2:#322B25;
+    --ink:#F2EAE0; --ink-soft:#A99B8C; --ink-faint:#7C7064;
+    --line:#3A332C; --line-soft:#332D27;
+    --primary:#D98456; --primary-deep:#E0936A; --primary-soft:#3A2A20;
+    --income:#5FB587; --income-soft:#23332B;
+    --expense:#E07C71; --expense-soft:#3A2420;
+    --accent:#E0AC55; --accent-soft:#352B1B;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);
+    --shadow-sm:0 1px 2px rgba(0,0,0,.3);
+    --shadow-lg:0 12px 34px rgba(0,0,0,.5);
   }
   *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
   body{
     font-family:'IBM Plex Sans Thai',sans-serif;background:var(--bg);color:var(--ink);
-    line-height:1.5;-webkit-font-smoothing:antialiased;padding-bottom:90px;
+    line-height:1.55;-webkit-font-smoothing:antialiased;font-size:16px;
+    padding-bottom:calc(96px + env(safe-area-inset-bottom));
+    transition:background .3s ease,color .3s ease;
   }
   .num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
-  .wrap{max-width:920px;margin:0 auto;padding:0 16px}
+  .wrap{max-width:920px;margin:0 auto;padding:0 18px}
 
   /* Header */
-  header{background:var(--primary);color:#fff;padding:20px 0 64px}
-  .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1.15rem;letter-spacing:.2px}
-  .brand .gear{margin-left:auto;background:rgba(255,255,255,.14);color:#fff;border:none;
-    width:34px;height:34px;border-radius:10px;font-size:1.1rem;cursor:pointer;line-height:1}
-  .brand .gear:hover{background:rgba(255,255,255,.26)}
-  .brand .mark{width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.16);
-    display:grid;place-items:center;font-size:1rem}
-  .monthbar{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:18px}
-  .monthbar button{background:rgba(255,255,255,.12);color:#fff;border:none;width:34px;height:34px;
-    border-radius:10px;font-size:1.1rem;cursor:pointer;transition:.15s}
-  .monthbar button:hover{background:rgba(255,255,255,.24)}
-  .monthbar .mlabel{font-weight:600;font-size:1.05rem;min-width:170px;text-align:center}
+  header{background:var(--primary);color:#fff;padding:calc(18px + env(safe-area-inset-top)) 0 70px;
+    transition:background .3s ease;position:relative;overflow:hidden}
+  header::after{content:"";position:absolute;right:-60px;top:-70px;width:220px;height:220px;
+    border-radius:50%;background:rgba(255,255,255,.07)}
+  header::before{content:"";position:absolute;left:-40px;bottom:-90px;width:170px;height:170px;
+    border-radius:50%;background:rgba(255,255,255,.05)}
+  .brand{display:flex;align-items:center;gap:11px;font-weight:700;font-size:1.2rem;letter-spacing:.2px;position:relative;z-index:1}
+  .brand .gear{background:rgba(255,255,255,.16);color:#fff;border:none;
+    width:38px;height:38px;border-radius:12px;font-size:1.15rem;cursor:pointer;line-height:1;
+    display:grid;place-items:center;transition:.15s;flex-shrink:0}
+  .brand .gear:hover{background:rgba(255,255,255,.3)}
+  .brand .gear:active{transform:scale(.92)}
+  .brand #themeToggle{margin-left:auto}
+  .brand .mark{width:34px;height:34px;border-radius:11px;background:rgba(255,255,255,.18);
+    display:grid;place-items:center;font-size:1.1rem;font-weight:700}
+
+  .monthbar{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:18px;position:relative;z-index:1}
+  .monthbar button{background:rgba(255,255,255,.14);color:#fff;border:none;width:38px;height:38px;
+    border-radius:12px;font-size:1.2rem;cursor:pointer;transition:.15s}
+  .monthbar button:hover{background:rgba(255,255,255,.26)}
+  .monthbar button:active{transform:scale(.92)}
+  .monthbar .mlabel{font-weight:600;font-size:1.08rem;min-width:178px;text-align:center}
+
+  /* Greeting (home) */
+  .greetrow{display:none;align-items:center;gap:12px;margin-top:18px;position:relative;z-index:1}
+  .greetrow.show{display:flex}
+  .greet-text{flex:1;min-width:0}
+  .greet-hi{font-weight:700;font-size:1.35rem;line-height:1.2}
+  .greet-sub{font-size:.9rem;opacity:.85;margin-top:2px}
+  .member-chip{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.16);
+    border:none;color:#fff;padding:6px 12px 6px 6px;border-radius:30px;cursor:pointer;
+    font-family:inherit;font-weight:600;font-size:.92rem;transition:.15s}
+  .member-chip:hover{background:rgba(255,255,255,.28)}
+  .member-chip:active{transform:scale(.96)}
+  .member-chip .cv{font-size:.78rem;opacity:.85;font-weight:500;margin-left:2px}
+
+  /* Avatar */
+  .avatar{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:50%;
+    color:#fff;font-size:1rem;font-weight:600;flex-shrink:0;line-height:1;
+    box-shadow:inset 0 0 0 2px rgba(255,255,255,.25)}
+  .avatar.sm{width:26px;height:26px;font-size:.85rem}
+  .avatar.lg{width:48px;height:48px;font-size:1.5rem}
 
   /* Summary cards */
-  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:-46px}
-  .card{background:var(--surface);border-radius:var(--r);padding:16px;box-shadow:var(--shadow)}
-  .card .lbl{font-size:.82rem;color:var(--ink-soft);display:flex;align-items:center;gap:6px}
-  .card .dot{width:8px;height:8px;border-radius:50%}
-  .card .val{font-weight:700;font-size:1.4rem;margin-top:6px}
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:13px;margin-top:-48px;position:relative;z-index:2}
+  .card{background:var(--surface);border-radius:var(--r);padding:17px 18px;box-shadow:var(--shadow)}
+  .card .lbl{font-size:.84rem;color:var(--ink-soft);display:flex;align-items:center;gap:7px;font-weight:500}
+  .card .dot{width:9px;height:9px;border-radius:50%}
+  .card .val{font-weight:700;font-size:1.5rem;margin-top:7px;letter-spacing:-.01em}
   .card.inc .val{color:var(--income)} .card.inc .dot{background:var(--income)}
   .card.exp .val{color:var(--expense)} .card.exp .dot{background:var(--expense)}
   .card.bal .val{color:var(--primary)} .card.bal .dot{background:var(--primary)}
 
-  /* Tabs */
-  .tabs{display:flex;gap:6px;margin:22px 0 14px;background:var(--surface);
-    padding:5px;border-radius:12px;box-shadow:var(--shadow);width:max-content}
-  .tabs button{border:none;background:transparent;padding:9px 18px;border-radius:8px;
-    font-family:inherit;font-weight:600;font-size:.95rem;color:var(--ink-soft);cursor:pointer}
-  .tabs button.active{background:var(--primary-soft);color:var(--primary)}
+  /* Tabs (kept for accessibility / desktop) hidden — nav is bottom bar */
 
   /* Buttons */
-  .btn{border:none;border-radius:10px;font-family:inherit;font-weight:600;cursor:pointer;transition:.15s}
-  .btn-primary{background:var(--primary);color:#fff;padding:11px 18px}
-  .btn-primary:hover{background:#0c403e}
-  .btn-ghost{background:var(--surface);border:1px solid var(--line);color:var(--ink);padding:10px 16px}
+  .btn{border:none;border-radius:13px;font-family:inherit;font-weight:600;cursor:pointer;transition:.15s;font-size:1rem}
+  .btn:active{transform:scale(.97)}
+  .btn-primary{background:var(--primary);color:#fff;padding:13px 20px}
+  .btn-primary:hover{background:var(--primary-deep)}
+  .btn-ghost{background:var(--surface);border:1.5px solid var(--line);color:var(--ink);padding:11px 18px}
   .btn-ghost:hover{border-color:var(--ink-soft)}
 
+  /* Section title */
+  .sec{display:flex;align-items:center;justify-content:space-between;margin:24px 4px 12px}
+  .sec h2{font-size:1.08rem;font-weight:700;display:flex;align-items:center;gap:9px}
+  .sec h2 .bar{width:5px;height:18px;border-radius:3px;background:var(--primary)}
+
   /* Day groups */
-  .day{margin-bottom:16px}
+  .day{margin-bottom:18px}
   .day-head{display:flex;justify-content:space-between;align-items:baseline;
-    padding:0 4px 8px;border-bottom:1px solid var(--line);margin-bottom:8px}
-  .day-head .date{font-weight:600;font-size:.95rem}
-  .day-head .net{font-size:.85rem;color:var(--ink-soft)}
+    padding:0 4px 9px;margin-bottom:9px}
+  .day-head .date{font-weight:600;font-size:.96rem}
+  .day-head .net{font-size:.86rem;color:var(--ink-soft)}
   .day-head .net b{font-variant-numeric:tabular-nums}
-  .tx{display:flex;align-items:center;gap:12px;background:var(--surface);
-    border-radius:12px;padding:12px 14px;margin-bottom:8px;box-shadow:var(--shadow)}
-  .tx .icon{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;
-    font-size:1.1rem;flex-shrink:0}
-  .tx.inc .icon{background:var(--income-soft)} .tx.exp .icon{background:var(--expense-soft)}
+  .tx{display:flex;align-items:center;gap:13px;background:var(--surface);
+    border-radius:15px;padding:13px 15px;margin-bottom:9px;box-shadow:var(--shadow-sm);transition:.12s}
+  .tx:active{transform:scale(.992)}
+  .tx .icon{width:44px;height:44px;border-radius:13px;display:grid;place-items:center;
+    font-size:1.2rem;font-weight:700;flex-shrink:0}
+  .tx.inc .icon{background:var(--income-soft);color:var(--income)}
+  .tx.exp .icon{background:var(--expense-soft);color:var(--expense)}
   .tx .meta{flex:1;min-width:0}
-  .tx .cat{font-weight:600;font-size:.95rem}
-  .tx .note{font-size:.82rem;color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .tx .amt{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .tx .cat{font-weight:600;font-size:.97rem}
+  .tx .note{font-size:.83rem;color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tx .amt{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;font-size:1.02rem}
   .tx.inc .amt{color:var(--income)} .tx.exp .amt{color:var(--expense)}
-  .tx .thumb{width:38px;height:38px;border-radius:8px;object-fit:cover;cursor:pointer;
+  .tx .thumb{width:40px;height:40px;border-radius:10px;object-fit:cover;cursor:pointer;
     border:1px solid var(--line);flex-shrink:0}
-  .tx .filebtn{width:38px;height:38px;border-radius:8px;border:1px solid var(--line);
-    background:var(--bg);display:grid;place-items:center;cursor:pointer;font-size:1rem;flex-shrink:0}
-  .tx .del{background:none;border:none;color:var(--ink-soft);cursor:pointer;font-size:1.05rem;
-    padding:4px;border-radius:6px;flex-shrink:0}
-  .tx .del:hover{color:var(--expense);background:var(--expense-soft)}
+  .tx .filebtn{width:40px;height:40px;border-radius:10px;border:1px solid var(--line);
+    background:var(--surface-2);display:grid;place-items:center;cursor:pointer;font-size:1.05rem;flex-shrink:0;color:var(--ink-soft)}
+  .tx .rowact{display:flex;flex-direction:column;gap:2px;flex-shrink:0}
+  .tx .mini{background:none;border:none;color:var(--ink-faint);cursor:pointer;font-size:.95rem;
+    padding:3px 5px;border-radius:7px;line-height:1}
+  .tx .mini.edit:hover{color:var(--primary);background:var(--primary-soft)}
+  .tx .mini.del:hover{color:var(--expense);background:var(--expense-soft)}
 
-  .empty{text-align:center;padding:48px 20px;color:var(--ink-soft)}
-  .empty .big{font-size:2.4rem;margin-bottom:10px}
+  .empty{text-align:center;padding:54px 20px;color:var(--ink-soft)}
+  .empty .big{font-size:2.6rem;margin-bottom:12px}
+  .empty .sub{font-size:.92rem;margin-top:4px}
 
-  /* Summary view */
-  .panel{background:var(--surface);border-radius:var(--r);padding:18px;box-shadow:var(--shadow);margin-bottom:14px}
-  .panel h3{font-size:1rem;margin-bottom:14px;display:flex;align-items:center;gap:8px}
-  .panel h3 .bar{width:4px;height:16px;border-radius:2px;background:var(--primary)}
-  .chart-box{position:relative;height:260px}
-  .breakdown{margin-top:6px}
-  .brow{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+  /* Panels */
+  .panel{background:var(--surface);border-radius:var(--r);padding:19px;box-shadow:var(--shadow-sm);margin-bottom:15px}
+  .panel h3{font-size:1.02rem;margin-bottom:15px;display:flex;align-items:center;gap:9px;font-weight:700}
+  .panel h3 .bar{width:5px;height:17px;border-radius:3px;background:var(--primary)}
+  .chart-box{position:relative;height:262px}
+  .breakdown{margin-top:8px}
+  .brow{display:flex;align-items:center;gap:11px;padding:10px 0;border-bottom:1px solid var(--line-soft)}
   .brow:last-child{border-bottom:none}
-  .brow .sw{width:12px;height:12px;border-radius:3px;flex-shrink:0}
-  .brow .bname{flex:1;font-size:.92rem}
-  .brow .bpct{font-size:.8rem;color:var(--ink-soft);width:46px;text-align:right}
-  .brow .bamt{font-weight:600;font-variant-numeric:tabular-nums;width:110px;text-align:right}
+  .brow .sw{width:13px;height:13px;border-radius:4px;flex-shrink:0}
+  .brow .bname{flex:1;font-size:.93rem}
+  .brow .bpct{font-size:.8rem;color:var(--ink-soft);width:48px;text-align:right}
+  .brow .bamt{font-weight:600;font-variant-numeric:tabular-nums;width:112px;text-align:right}
 
-  /* Floating add */
-  .fab{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:30}
-  .fab .btn-primary{box-shadow:0 8px 24px rgba(15,76,74,.35);padding:14px 26px;font-size:1rem}
+  /* Home: members */
+  .mem-list{display:flex;flex-direction:column;gap:2px}
+  .mem-row{display:flex;align-items:center;gap:12px;padding:11px 2px}
+  .mem-row .mname{flex:1;min-width:0}
+  .mem-row .mname .mn{font-weight:600;font-size:.96rem}
+  .mem-row .mname .mtrack{height:7px;background:var(--line-soft);border-radius:5px;margin-top:7px;overflow:hidden}
+  .mem-row .mname .mfill{height:100%;border-radius:5px;background:var(--primary);transition:width .35s}
+  .mem-row .mval{font-weight:700;font-variant-numeric:tabular-nums;color:var(--expense);font-size:.98rem;white-space:nowrap}
+  .mem-row .mval .ml{display:block;font-size:.72rem;color:var(--ink-faint);font-weight:500;text-align:right}
+
+  /* Floating add removed — bottom nav handles add */
+
+  /* Bottom nav */
+  .bottomnav{position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--surface);
+    border-top:1px solid var(--line);display:flex;align-items:flex-start;justify-content:space-around;
+    padding:9px 6px calc(9px + env(safe-area-inset-bottom));box-shadow:0 -2px 16px rgba(44,39,34,.06)}
+  .bottomnav .nav{background:none;border:none;font-family:inherit;cursor:pointer;color:var(--ink-faint);
+    display:flex;flex-direction:column;align-items:center;gap:3px;font-size:.72rem;font-weight:600;
+    padding:4px 8px;border-radius:12px;flex:1;max-width:90px;transition:.15s}
+  .bottomnav .nav .ic{font-size:1.3rem;line-height:1}
+  .bottomnav .nav.active{color:var(--primary)}
+  .bottomnav .addwrap{flex:0 0 auto;display:flex;justify-content:center;width:74px}
+  .bottomnav .addbtn{width:60px;height:60px;border-radius:50%;background:var(--primary);color:#fff;
+    border:none;font-size:1.9rem;cursor:pointer;margin-top:-26px;box-shadow:0 8px 22px rgba(194,105,62,.45);
+    display:grid;place-items:center;transition:.15s;line-height:1;font-weight:300}
+  .bottomnav .addbtn:hover{background:var(--primary-deep)}
+  .bottomnav .addbtn:active{transform:scale(.92)}
 
   /* Modal */
-  .overlay{position:fixed;inset:0;background:rgba(23,38,34,.45);display:none;
-    align-items:flex-end;justify-content:center;z-index:50}
+  .overlay{position:fixed;inset:0;background:rgba(28,25,22,.5);display:none;
+    align-items:flex-end;justify-content:center;z-index:50;backdrop-filter:blur(2px)}
   .overlay.show{display:flex}
-  .sheet{background:var(--surface);width:100%;max-width:560px;border-radius:18px 18px 0 0;
-    padding:22px;max-height:92vh;overflow-y:auto;animation:slideup .25s ease}
-  @keyframes slideup{from{transform:translateY(30px);opacity:.6}to{transform:none;opacity:1}}
-  .sheet h2{font-size:1.15rem;margin-bottom:4px}
-  .sheet .sub{font-size:.85rem;color:var(--ink-soft);margin-bottom:16px}
-  .typeseg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
-  .typeseg button{padding:12px;border-radius:11px;border:2px solid var(--line);background:var(--surface);
-    font-family:inherit;font-weight:600;cursor:pointer;font-size:.95rem;color:var(--ink-soft)}
+  .sheet{background:var(--surface);width:100%;max-width:560px;border-radius:24px 24px 0 0;
+    padding:10px 22px calc(22px + env(safe-area-inset-bottom));max-height:94vh;overflow-y:auto;animation:slideup .28s cubic-bezier(.2,.8,.2,1)}
+  .sheet .grab{width:42px;height:5px;border-radius:3px;background:var(--line);margin:6px auto 14px}
+  .sheet-top{position:sticky;top:0;z-index:6;background:var(--surface);margin:0 -22px 10px;padding:4px 22px 4px}
+  .sheet-close{position:absolute;top:8px;right:16px;width:38px;height:38px;border-radius:50%;border:none;
+    background:var(--surface-2);color:var(--ink);font-size:1.1rem;cursor:pointer;display:grid;place-items:center;transition:.15s}
+  .sheet-close:hover{background:var(--line)}
+  .sheet-close:active{transform:scale(.92)}
+  @keyframes slideup{from{transform:translateY(40px)}to{transform:none}}
+  .sheet h2{font-size:1.2rem;margin-bottom:4px;font-weight:700}
+  .sheet .sub{font-size:.86rem;color:var(--ink-soft);margin-bottom:18px;line-height:1.5}
+  .typeseg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
+  .typeseg button{padding:14px;border-radius:14px;border:2px solid var(--line);background:var(--surface);
+    font-family:inherit;font-weight:600;cursor:pointer;font-size:1rem;color:var(--ink-soft);transition:.15s}
   .typeseg button.act-inc{border-color:var(--income);background:var(--income-soft);color:var(--income)}
   .typeseg button.act-exp{border-color:var(--expense);background:var(--expense-soft);color:var(--expense)}
-  .field{margin-bottom:14px}
-  .field label{display:block;font-size:.85rem;font-weight:500;margin-bottom:6px}
-  .field input,.field select{width:100%;padding:11px 12px;border:1px solid var(--line);
-    border-radius:10px;font-family:inherit;font-size:1rem;background:var(--surface);color:var(--ink)}
-  .field input:focus,.field select:focus{outline:none;border-color:var(--primary)}
+  .field{margin-bottom:16px}
+  .field label{display:block;font-size:.86rem;font-weight:600;margin-bottom:7px;color:var(--ink)}
+  .field input,.field select{width:100%;padding:13px 14px;border:1.5px solid var(--line);
+    border-radius:13px;font-family:inherit;font-size:1rem;background:var(--surface);color:var(--ink);transition:.15s}
+  .field input:focus,.field select:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
+  .field input::placeholder{color:var(--ink-faint)}
   .amt-input{position:relative}
-  .amt-input span{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--ink-soft)}
-  .amt-input input{padding-left:30px;font-size:1.25rem;font-weight:700;font-variant-numeric:tabular-nums}
-  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  .catadd{display:flex;gap:8px;margin-top:8px}
+  .amt-input span.cur{position:absolute;left:15px;top:calc(50% + 14px);transform:translateY(-50%);color:var(--ink-soft);font-size:1.35rem;font-weight:700}
+  .amt-input input{padding-left:38px;font-size:1.55rem;font-weight:700;font-variant-numeric:tabular-nums}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+  .catadd{display:flex;gap:9px;margin-top:9px}
   .catadd input{flex:1}
-  .filezone{border:1.5px dashed var(--line);border-radius:11px;padding:14px;text-align:center;
-    cursor:pointer;color:var(--ink-soft);font-size:.9rem}
+  /* who chips */
+  .whochips{display:flex;gap:9px;flex-wrap:wrap}
+  .whochip{display:flex;align-items:center;gap:8px;padding:8px 14px 8px 8px;border-radius:30px;
+    border:2px solid var(--line);background:var(--surface);cursor:pointer;font-family:inherit;
+    font-weight:600;font-size:.92rem;color:var(--ink-soft);transition:.15s}
+  .whochip.sel{border-color:var(--primary);background:var(--primary-soft);color:var(--ink)}
+  .filezone{border:1.5px dashed var(--line);border-radius:14px;padding:16px;text-align:center;
+    cursor:pointer;color:var(--ink-soft);font-size:.9rem;transition:.15s}
   .filezone:hover{border-color:var(--primary);color:var(--primary)}
   .filezone.has{border-style:solid;border-color:var(--income);color:var(--ink)}
   .preview{display:flex;align-items:center;gap:10px;justify-content:center}
-  .preview img{height:46px;border-radius:8px}
-  .sheet-actions{display:grid;grid-template-columns:1fr 2fr;gap:10px;margin-top:8px}
+  .preview img{height:50px;border-radius:9px}
+  .sheet-actions{display:grid;grid-template-columns:1fr 2fr;gap:11px;margin-top:10px}
+
+  /* Member manager */
+  .mm-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line-soft)}
+  .mm-row:last-of-type{border-bottom:none}
+  .mm-row .mm-name{flex:1;font-weight:600}
+  .mm-row button{background:none;border:none;color:var(--ink-faint);cursor:pointer;font-size:1rem;
+    padding:6px 8px;border-radius:8px}
+  .mm-row button:hover{background:var(--surface-2);color:var(--ink)}
+  .picker{display:flex;gap:9px;flex-wrap:wrap;margin-top:4px}
+  .picker .opt{width:40px;height:40px;border-radius:50%;border:2px solid transparent;cursor:pointer;
+    display:grid;place-items:center;font-size:1.15rem;transition:.12s;background:var(--surface-2)}
+  .picker .opt.sel{border-color:var(--ink);transform:scale(1.08)}
+  .picker.colors .opt{box-shadow:inset 0 0 0 2px rgba(255,255,255,.3)}
+  .newmem-pick{display:flex;align-items:center;gap:14px;margin-top:14px}
+  .vh-input{position:absolute!important;left:0;width:1px;height:1px;opacity:0;overflow:hidden;clip:rect(0 0 0 0);border:0;padding:0}
+  .avatar[style*="url"]{box-shadow:inset 0 0 0 2px rgba(255,255,255,.35)}
+  .mm-row .mm-photo:hover{color:var(--primary);background:var(--primary-soft)}
+
+  /* member switch overlay rows */
+  .ms-row{display:flex;align-items:center;gap:13px;padding:14px 12px;border-radius:14px;cursor:pointer;
+    transition:.12s;border:2px solid transparent}
+  .ms-row:hover{background:var(--surface-2)}
+  .ms-row.cur{border-color:var(--primary);background:var(--primary-soft)}
+  .ms-row .msn{flex:1;font-weight:600}
+  .ms-row .check{color:var(--primary);font-weight:700}
 
   /* Lightbox */
-  .lightbox{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;
+  .lightbox{position:fixed;inset:0;background:rgba(0,0,0,.88);display:none;
     align-items:center;justify-content:center;z-index:60;padding:20px;flex-direction:column;gap:14px}
   .lightbox.show{display:flex}
-  .lightbox img{max-width:100%;max-height:80vh;border-radius:8px}
-  .lightbox .close{color:#fff;background:rgba(255,255,255,.15);border:none;padding:10px 20px;
-    border-radius:10px;cursor:pointer;font-family:inherit;font-weight:600}
+  .lightbox img{max-width:100%;max-height:80vh;border-radius:10px}
+  .lightbox .close{color:#fff;background:rgba(255,255,255,.16);border:none;padding:11px 22px;
+    border-radius:12px;cursor:pointer;font-family:inherit;font-weight:600}
 
-  .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);
-    background:var(--ink);color:#fff;padding:11px 20px;border-radius:11px;font-size:.9rem;
-    opacity:0;transition:.25s;z-index:70;pointer-events:none}
+  .toast{position:fixed;bottom:calc(104px + env(safe-area-inset-bottom));left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--ink);color:var(--bg);padding:12px 22px;border-radius:13px;font-size:.92rem;font-weight:500;
+    opacity:0;transition:.25s;z-index:70;pointer-events:none;box-shadow:var(--shadow-lg)}
   .toast.show{opacity:1;transform:translateX(-50%)}
 
-  .loading{text-align:center;padding:40px;color:var(--ink-soft)}
+  .loading{text-align:center;padding:46px;color:var(--ink-soft)}
 
   /* OCR status */
-  .ocr{margin-top:8px;font-size:.86rem;display:none;align-items:center;gap:8px;
-    padding:10px 12px;border-radius:10px;line-height:1.4}
+  .ocr{margin-top:9px;font-size:.87rem;display:none;align-items:center;gap:8px;
+    padding:11px 13px;border-radius:12px;line-height:1.45}
   .ocr.show{display:flex}
-  .ocr.loading{background:var(--primary-soft);color:var(--primary)}
-  .ocr.ok{background:var(--income-soft);color:#157a51}
-  .ocr.err{background:var(--expense-soft);color:#b23a31}
-  .ocr a{color:inherit}
-  .spin{width:15px;height:15px;border:2px solid currentColor;border-top-color:transparent;
+  .ocr.loading{background:var(--primary-soft);color:var(--primary-deep)}
+  .ocr.ok{background:var(--income-soft);color:var(--income)}
+  .ocr.err{background:var(--expense-soft);color:var(--expense)}
+  .ocr a{color:inherit;font-weight:600}
+  .spin{width:16px;height:16px;border:2px solid currentColor;border-top-color:transparent;
     border-radius:50%;animation:sp .7s linear infinite;flex-shrink:0}
   @keyframes sp{to{transform:rotate(360deg)}}
 
   /* filter bar */
-  .filterbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
-  .filterbar .search{flex:1 1 180px;padding:10px 12px;border:1px solid var(--line);
-    border-radius:10px;font-family:inherit;font-size:.95rem;background:var(--surface);color:var(--ink)}
-  .filterbar select{padding:10px 12px;border:1px solid var(--line);border-radius:10px;
+  .filterbar{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:15px}
+  .filterbar .search{flex:1 1 180px;padding:11px 13px;border:1.5px solid var(--line);
+    border-radius:13px;font-family:inherit;font-size:.95rem;background:var(--surface);color:var(--ink)}
+  .filterbar select{padding:11px 13px;border:1.5px solid var(--line);border-radius:13px;
     font-family:inherit;font-size:.9rem;background:var(--surface);color:var(--ink)}
   .filterbar .allm{display:flex;align-items:center;gap:6px;font-size:.85rem;color:var(--ink-soft);
     padding:0 6px;white-space:nowrap}
   .filterbar input:focus,.filterbar select:focus{outline:none;border-color:var(--primary)}
 
-  /* tx edit button */
-  .tx .edit{background:none;border:none;color:var(--ink-soft);cursor:pointer;font-size:1rem;
-    padding:4px;border-radius:6px;flex-shrink:0}
-  .tx .edit:hover{color:var(--primary);background:var(--primary-soft)}
-
   /* compare stat */
-  .compare{display:flex;gap:10px;flex-wrap:wrap}
-  .compare .cstat{flex:1;min-width:120px;background:var(--bg);border-radius:10px;padding:11px 13px}
-  .compare .cstat .l{font-size:.78rem;color:var(--ink-soft)}
-  .compare .cstat .v{font-weight:700;font-variant-numeric:tabular-nums;font-size:1.05rem;margin-top:2px}
+  .compare{display:flex;gap:11px;flex-wrap:wrap}
+  .compare .cstat{flex:1;min-width:120px;background:var(--surface-2);border-radius:13px;padding:13px 15px}
+  .compare .cstat .l{font-size:.79rem;color:var(--ink-soft)}
+  .compare .cstat .v{font-weight:700;font-variant-numeric:tabular-nums;font-size:1.08rem;margin-top:3px}
   .delta{font-size:.78rem;font-weight:600;margin-left:6px}
   .delta.up{color:var(--expense)} .delta.down{color:var(--income)} .delta.flat{color:var(--ink-soft)}
 
   /* budget */
-  .budget-row{padding:11px 0;border-bottom:1px solid var(--line)}
+  .budget-row{padding:12px 0;border-bottom:1px solid var(--line-soft)}
   .budget-row:last-child{border-bottom:none}
-  .budget-row .top{display:flex;justify-content:space-between;align-items:baseline;font-size:.9rem}
+  .budget-row .top{display:flex;justify-content:space-between;align-items:baseline;font-size:.92rem}
   .budget-row .top .amt{font-variant-numeric:tabular-nums;color:var(--ink-soft);font-size:.82rem}
-  .bar-track{height:8px;background:var(--line);border-radius:5px;margin-top:7px;overflow:hidden}
-  .bar-fill{height:100%;border-radius:5px;transition:width .3s}
-  .budget-empty{text-align:center;color:var(--ink-soft);padding:14px;font-size:.9rem}
-  .panel .phead{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+  .bar-track{height:9px;background:var(--line-soft);border-radius:6px;margin-top:8px;overflow:hidden}
+  .bar-fill{height:100%;border-radius:6px;transition:width .35s}
+  .budget-empty{text-align:center;color:var(--ink-soft);padding:16px;font-size:.9rem}
+  .panel .phead{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}
   .panel .phead h3{margin:0}
   .linkbtn{background:none;border:none;color:var(--primary);font-family:inherit;font-weight:600;
-    font-size:.85rem;cursor:pointer;padding:4px}
+    font-size:.86rem;cursor:pointer;padding:5px}
 
   /* year totals */
-  .ytot{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
-  .ytot .yc{background:var(--surface);border-radius:12px;padding:14px;box-shadow:var(--shadow)}
+  .ytot{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-bottom:15px}
+  .ytot .yc{background:var(--surface);border-radius:14px;padding:15px;box-shadow:var(--shadow-sm)}
   .ytot .yc .l{font-size:.8rem;color:var(--ink-soft)}
-  .ytot .yc .v{font-weight:700;font-variant-numeric:tabular-nums;font-size:1.2rem;margin-top:4px}
+  .ytot .yc .v{font-weight:700;font-variant-numeric:tabular-nums;font-size:1.22rem;margin-top:5px}
   .ytot .yc.i .v{color:var(--income)} .ytot .yc.e .v{color:var(--expense)} .ytot .yc.b .v{color:var(--primary)}
-  .ymtable .ymrow{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:.9rem}
+  .ymtable .ymrow{display:flex;align-items:center;gap:11px;padding:10px 0;border-bottom:1px solid var(--line-soft);font-size:.9rem;cursor:pointer}
   .ymtable .ymrow:last-child{border-bottom:none}
   .ymtable .ymon{width:64px;color:var(--ink-soft)}
   .ymtable .ynet{margin-left:auto;font-weight:600;font-variant-numeric:tabular-nums}
 
   /* data buttons */
-  .databtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
-  .databtns .btn{flex:1;min-width:110px;text-align:center;font-size:.9rem;padding:10px}
-  .seg-divider{border:none;border-top:1px solid var(--line);margin:18px 0}
-  .rmfile{display:block;text-align:center;margin-top:6px;font-size:.82rem;color:var(--expense);
+  .databtns{display:flex;gap:9px;flex-wrap:wrap;margin-top:7px}
+  .databtns .btn{flex:1;min-width:110px;text-align:center;font-size:.9rem;padding:11px}
+  .seg-divider{border:none;border-top:1px solid var(--line);margin:20px 0}
+  .rmfile{display:block;text-align:center;margin-top:7px;font-size:.83rem;color:var(--expense);
     cursor:pointer;background:none;border:none;width:100%;font-family:inherit}
 
   @media(max-width:560px){
-    .cards{grid-template-columns:1fr;margin-top:-46px}
+    .cards{grid-template-columns:1fr;margin-top:-48px}
     .card{display:flex;justify-content:space-between;align-items:center}
     .card .val{margin-top:0}
-    .brow .bamt{width:90px}
+    .brow .bamt{width:96px}
     .ytot{grid-template-columns:1fr}
     .ytot .yc{display:flex;justify-content:space-between;align-items:center}
     .ytot .yc .v{margin-top:0}
@@ -247,9 +361,17 @@
 <header>
   <div class="wrap">
     <div class="brand"><span class="mark">฿</span> สมุดบัญชี
+      <button id="themeToggle" class="gear" aria-label="สลับโหมดสว่าง/มืด">🌙</button>
       <button id="openSettings" class="gear" aria-label="ตั้งค่า">⚙</button>
     </div>
-    <div class="monthbar">
+    <div class="greetrow" id="greetRow">
+      <div class="greet-text">
+        <div class="greet-hi" id="greetHi">สวัสดี</div>
+        <div class="greet-sub" id="greetSub">วันนี้บันทึกอะไรไปบ้างแล้ว?</div>
+      </div>
+      <button class="member-chip" id="memberChip" aria-label="เปลี่ยนสมาชิก"></button>
+    </div>
+    <div class="monthbar" id="monthbar">
       <button id="prevM" aria-label="เดือนก่อนหน้า">‹</button>
       <div class="mlabel" id="mlabel">—</div>
       <button id="nextM" aria-label="เดือนถัดไป">›</button>
@@ -258,7 +380,7 @@
 </header>
 
 <div class="wrap">
-  <div class="cards">
+  <div class="cards" id="topCards">
     <div class="card inc"><div><div class="lbl"><span class="dot"></span>รายรับ</div>
       <div class="val num" id="sumInc">฿0</div></div></div>
     <div class="card exp"><div><div class="lbl"><span class="dot"></span>รายจ่าย</div>
@@ -267,13 +389,7 @@
       <div class="val num" id="sumBal">฿0</div></div></div>
   </div>
 
-  <div class="tabs">
-    <button id="tabList" class="active">รายการ</button>
-    <button id="tabSum">สรุปเดือน</button>
-    <button id="tabYear">รายปี</button>
-  </div>
-
-  <div id="filterBar" class="filterbar">
+  <div id="filterBar" class="filterbar" style="display:none;margin-top:20px">
     <input id="fq" class="search" placeholder="ค้นหา หมายเหตุ / ประเภท…">
     <select id="ffType">
       <option value="all">ทุกชนิด</option>
@@ -281,19 +397,29 @@
       <option value="expense">รายจ่าย</option>
     </select>
     <select id="ffCat"><option value="all">ทุกประเภท</option></select>
+    <select id="ffWho"><option value="all">ทุกคน</option></select>
     <label class="allm"><input type="checkbox" id="ffAll"> ค้นทุกเดือน</label>
   </div>
 
-  <div id="viewList"></div>
+  <div id="viewHome"></div>
+  <div id="viewList" style="display:none"></div>
   <div id="viewSum" style="display:none"></div>
   <div id="viewYear" style="display:none"></div>
 </div>
 
-<div class="fab"><button class="btn btn-primary" id="openAdd">+ เพิ่มรายการ</button></div>
+<!-- Bottom nav -->
+<nav class="bottomnav">
+  <button class="nav" data-tab="home"><span class="ic">🏠</span>หน้าหลัก</button>
+  <button class="nav" data-tab="list"><span class="ic">📋</span>รายการ</button>
+  <div class="addwrap"><button class="addbtn" id="openAdd" aria-label="เพิ่มรายการ">+</button></div>
+  <button class="nav" data-tab="sum"><span class="ic">📊</span>สรุป</button>
+  <button class="nav" data-tab="year"><span class="ic">📅</span>รายปี</button>
+</nav>
 
 <!-- Add sheet -->
 <div class="overlay" id="overlay">
   <div class="sheet">
+    <div class="sheet-top"><div class="grab"></div><button class="sheet-close" id="closeAdd" aria-label="ปิด">✕</button></div>
     <h2 id="sheetTitle">เพิ่มรายการ</h2>
     <div class="sub">บันทึกรายรับหรือรายจ่าย พร้อมแนบสลิป/ใบเสร็จได้</div>
     <div class="typeseg">
@@ -302,7 +428,11 @@
     </div>
     <div class="field amt-input">
       <label>จำนวนเงิน (บาท)</label>
-      <span>฿</span><input type="number" id="fAmt" inputmode="decimal" placeholder="0.00" min="0" step="0.01">
+      <span class="cur">฿</span><input type="number" id="fAmt" inputmode="decimal" placeholder="0.00" min="0" step="0.01">
+    </div>
+    <div class="field">
+      <label>ใครเป็นคนบันทึก</label>
+      <div class="whochips" id="whoChips"></div>
     </div>
     <div class="field">
       <label>ประเภท</label>
@@ -321,7 +451,7 @@
       <div class="filezone" id="fileZone">
         <div id="fileLabel">📎 แตะเพื่อเลือกรูปภาพหรือ PDF — ระบบจะอ่านยอดให้อัตโนมัติ</div>
       </div>
-      <input type="file" id="fFile" accept="image/*,application/pdf" hidden>
+      <input type="file" id="fFile" accept="image/*,application/pdf" class="vh-input">
       <div class="ocr" id="ocrStatus"></div>
       <button type="button" id="rmFile" class="rmfile" style="display:none">✕ เอาไฟล์แนบออก</button>
     </div>
@@ -332,11 +462,52 @@
   </div>
 </div>
 
+<!-- Member switch overlay -->
+<div class="overlay" id="memberOverlay">
+  <div class="sheet">
+    <div class="sheet-top"><div class="grab"></div><button class="sheet-close" id="closeMember" aria-label="ปิด">✕</button></div>
+    <h2>เลือกสมาชิก</h2>
+    <div class="sub">เลือกว่าตอนนี้ใครกำลังใช้งาน รายการใหม่จะบันทึกในชื่อคนนี้</div>
+    <div id="msList"></div>
+    <div class="sheet-actions" style="grid-template-columns:1fr;margin-top:14px">
+      <button class="btn btn-ghost" id="manageMembers">⚙ จัดการสมาชิก</button>
+    </div>
+  </div>
+</div>
+
 <!-- Settings sheet -->
 <div class="overlay" id="setOverlay">
   <div class="sheet">
+    <div class="sheet-top"><div class="grab"></div><button class="sheet-close" id="closeSet" aria-label="ปิด">✕</button></div>
     <h2>ตั้งค่า</h2>
-    <div class="sub">การอ่านสลิป — เลือกได้ระหว่างแบบออฟไลน์ (ฟรี) หรือใช้ API เพื่อความแม่นยำสูงขึ้น</div>
+
+    <h2 style="font-size:1.06rem;margin-top:4px">สมาชิกในครอบครัว</h2>
+    <div class="sub">เพิ่มสมาชิกเพื่อบันทึกว่าใครเป็นคนเพิ่มแต่ละรายการ</div>
+    <div id="memberManager"></div>
+    <div class="catadd" style="margin-top:12px">
+      <input type="text" id="newMemberName" placeholder="ชื่อสมาชิกใหม่…">
+      <button class="btn btn-ghost" id="addMemberBtn">เพิ่ม</button>
+    </div>
+    <div class="newmem-pick">
+      <div id="newMemberPreview"></div>
+      <div style="flex:1">
+        <button type="button" class="btn btn-ghost" id="newPhotoBtn" style="width:100%;font-size:.9rem;padding:11px">📷 ใช้รูปภาพเป็นโปรไฟล์</button>
+        <div class="sub" style="margin:7px 0 0;font-size:.78rem">เลือกรูปจริง เช่น รูปแฟน/สมาชิก แล้วกด “เพิ่ม” · หรือเลือกไอคอนด้านล่างแทน</div>
+      </div>
+    </div>
+    <input type="file" id="memberPhotoInput" accept="image/*" class="vh-input">
+    <div class="field" style="margin-top:14px">
+      <label style="font-size:.82rem;color:var(--ink-soft)">หรือเลือกไอคอน</label>
+      <div class="picker" id="emojiPicker"></div>
+    </div>
+    <div class="field">
+      <label style="font-size:.82rem;color:var(--ink-soft)">สีประจำตัว</label>
+      <div class="picker colors" id="colorPicker"></div>
+    </div>
+
+    <hr class="seg-divider">
+    <h2 style="font-size:1.06rem">การอ่านสลิป</h2>
+    <div class="sub">เลือกได้ระหว่างแบบออฟไลน์ (ฟรี) หรือใช้ API เพื่อความแม่นยำสูงขึ้น</div>
     <div id="setStatusBox"></div>
     <div class="field">
       <label>Anthropic API key <span style="color:var(--ink-soft);font-weight:400">(ไม่บังคับ)</span></label>
@@ -352,21 +523,24 @@
     </div>
 
     <hr class="seg-divider">
-    <h2 style="font-size:1.05rem">ข้อมูลและการสำรอง</h2>
+    <h2 style="font-size:1.06rem">ข้อมูลและการสำรอง</h2>
     <div class="sub">ข้อมูลเก็บอยู่ในเครื่องนี้ ควรส่งออกเก็บไว้เป็นระยะเพื่อกันข้อมูลสูญหาย</div>
     <div class="databtns">
       <button class="btn btn-ghost" id="expJson">⬇ สำรอง (JSON)</button>
       <button class="btn btn-ghost" id="expCsv">⬇ ส่งออก CSV</button>
       <button class="btn btn-ghost" id="impJson">⬆ นำเข้า (JSON)</button>
     </div>
-    <input type="file" id="impFile" accept="application/json,.json" hidden>
+    <input type="file" id="impFile" accept="application/json,.json" class="vh-input">
     <div class="sub" style="margin-top:8px">JSON = สำรองครบทุกอย่างรวมไฟล์แนบ (ใช้กู้คืน/ย้ายเครื่อง) · CSV = เปิดใน Excel ได้ (ไม่รวมไฟล์แนบ)</div>
+
+    <button class="btn btn-primary" id="doneSet" style="width:100%;margin-top:22px">เสร็จสิ้น</button>
   </div>
 </div>
 
 <!-- Budget sheet -->
 <div class="overlay" id="budgetOverlay">
   <div class="sheet">
+    <div class="sheet-top"><div class="grab"></div><button class="sheet-close" id="closeBudget" aria-label="ปิด">✕</button></div>
     <h2>งบประมาณรายเดือน</h2>
     <div class="sub">ตั้งงบต่อประเภทรายจ่าย (เว้นว่าง = ไม่จำกัด) ใช้กับทุกเดือน</div>
     <div id="budgetFields"></div>
@@ -385,7 +559,8 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const KEY_TX='ledger-transactions', KEY_CAT='ledger-categories', KEY_API='ledger-apikey', KEY_BUDGET='ledger-budgets';
+const KEY_TX='ledger-transactions', KEY_CAT='ledger-categories', KEY_API='ledger-apikey',
+  KEY_BUDGET='ledger-budgets', KEY_MEMBERS='ledger-members', KEY_CURMEM='ledger-current-member', KEY_THEME='ledger-theme';
 const IN_CLAUDE = (typeof window.storage!=='undefined' && window.storage && typeof window.storage.get==='function');
 
 /* store: ใช้ที่เก็บของ Claude เมื่ออยู่ใน Claude, ไม่งั้น fallback ไป localStorage (เปิดในเครื่อง) */
@@ -405,18 +580,43 @@ const DEFAULT_CATS={
   expense:['อาหารและเครื่องดื่ม','เดินทาง/น้ำมัน','ที่พักอาศัย','สาธารณูปโภค','ช้อปปิ้ง','สุขภาพ','การศึกษา','บันเทิง','ค่าธรรมเนียม','อื่นๆ']
 };
 const CAT_ICON={income:'↓',expense:'↑'};
-const PALETTE=['#0F4C4A','#1F9D6B','#B98A2E','#D24A40','#5E8B7E','#C97B5A','#7A9E9F','#A0522D','#4A7C6F','#D9A441','#8E6C88','#5C7457'];
+const PALETTE=['#C2693E','#3F9468','#D99A3C','#C0473C','#5B8A72','#3E7C8C','#9B6FB0','#A0682E','#4A7C6F','#C97B5A','#6B8E5A','#B0654A'];
 
-let txs=[], cats={...DEFAULT_CATS}, curType='expense', pendingFile=null;
-let budgets={}, editingId=null, viewState='list';
-const filters={q:'',type:'all',cat:'all',all:false};
+/* members */
+const AVA_COLORS=['#C2693E','#3F9468','#3E7C8C','#9B6FB0','#D99A3C','#C0473C','#5B8A72','#7A6FB0','#6B8E5A','#B06A8E'];
+const AVA_EMOJIS=['😀','😎','🧑','👩','👨','👵','👴','🧒','👧','👦','🐱','🐶','🌟','🍀','🦊','🐻'];
+const DEFAULT_MEMBERS=[{id:'m1',name:'ฉัน',color:'#C2693E',emoji:'😀'}];
+let members=[], currentMemberId=null, theme='light';
+let newMemberEmoji=AVA_EMOJIS[0], newMemberColor=AVA_COLORS[0], newMemberPhoto=null, photoTargetId=null;
+
+let txs=[], cats={...DEFAULT_CATS}, curType='expense', pendingFile=null, selectedWho=null;
+let budgets={}, editingId=null, viewState='home';
+const filters={q:'',type:'all',cat:'all',who:'all',all:false};
 let cur=new Date(); cur.setDate(1);
 let chartCat=null, chartDay=null, chartYear=null;
 
 const $=id=>document.getElementById(id);
 const fmt=n=>'฿'+Number(n||0).toLocaleString('th-TH',{minimumFractionDigits:0,maximumFractionDigits:2});
-const monthKey=d=>d.getFullYear()+'-'+(d.getMonth()+1);
 function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1800);}
+function cv(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim();}
+
+/* ---------- members helpers ---------- */
+function memberById(id){return members.find(m=>m.id===id);}
+function avatarHTML(id,cls){
+  const m=memberById(id);
+  if(!m) return `<span class="avatar ${cls||''}" style="background:var(--ink-faint)">?</span>`;
+  if(m.photo) return `<span class="avatar ${cls||''}" style="background-image:url('${m.photo}');background-size:cover;background-position:center" title="${escapeHtml(m.name)}"></span>`;
+  const inner = m.emoji || (m.name? m.name.trim().slice(0,1) : '?');
+  return `<span class="avatar ${cls||''}" style="background:${m.color}" title="${escapeHtml(m.name)}">${escapeHtml(inner)}</span>`;
+}
+
+/* ---------- theme ---------- */
+function applyTheme(){
+  document.documentElement.setAttribute('data-theme',theme);
+  $('themeToggle').textContent = theme==='dark'?'☀️':'🌙';
+  const meta=$('themeColorMeta'); if(meta) meta.setAttribute('content', theme==='dark'?'#1C1916':'#C2693E');
+}
+async function toggleTheme(){ theme = theme==='dark'?'light':'dark'; applyTheme(); await store.set(KEY_THEME,theme); renderAll(); }
 
 /* ---------- storage ---------- */
 async function loadAll(){
@@ -424,11 +624,17 @@ async function loadAll(){
   const c=await store.get(KEY_CAT); if(c){try{cats=JSON.parse(c);}catch(e){cats={...DEFAULT_CATS};}}
   const k=await store.get(KEY_API); if(k) userKey=k;
   const b=await store.get(KEY_BUDGET); if(b){try{budgets=JSON.parse(b);}catch(e){budgets={};}}
+  const mm=await store.get(KEY_MEMBERS); if(mm){try{members=JSON.parse(mm);}catch(e){members=[];}}
+  if(!Array.isArray(members)||!members.length){ members=DEFAULT_MEMBERS.map(m=>({...m})); await saveMembers(); }
+  const cm=await store.get(KEY_CURMEM); currentMemberId=(cm&&members.some(m=>m.id===cm))?cm:members[0].id;
+  const th=await store.get(KEY_THEME); theme=(th==='dark')?'dark':'light'; applyTheme();
 }
 async function saveTxs(){const ok=await store.set(KEY_TX,JSON.stringify(txs)); if(!ok)toast('บันทึกไม่สำเร็จ ลองอีกครั้ง'); return ok;}
 async function saveCats(){await store.set(KEY_CAT,JSON.stringify(cats));}
 async function saveKey(){await store.set(KEY_API,userKey);}
 async function saveBudgets(){await store.set(KEY_BUDGET,JSON.stringify(budgets));}
+async function saveMembers(){await store.set(KEY_MEMBERS,JSON.stringify(members));}
+async function saveCurMem(){await store.set(KEY_CURMEM,currentMemberId);}
 
 /* ---------- image compression ---------- */
 function processFile(file){
@@ -451,6 +657,26 @@ function processFile(file){
       img.src=e.target.result;
     };
     r.readAsDataURL(file);
+  });
+}
+
+/* ---------- avatar photo ---------- */
+function processAvatar(file){
+  return new Promise((resolve,reject)=>{
+    const r=new FileReader();
+    r.onload=e=>{
+      const img=new Image();
+      img.onload=()=>{
+        const size=240; const c=document.createElement('canvas'); c.width=size; c.height=size;
+        const ctx=c.getContext('2d');
+        const m=Math.min(img.width,img.height);
+        const sx=(img.width-m)/2, sy=(img.height-m)/2;
+        ctx.drawImage(img,sx,sy,m,m,0,0,size,size);
+        resolve(c.toDataURL('image/jpeg',0.82));
+      };
+      img.onerror=reject; img.src=e.target.result;
+    };
+    r.onerror=reject; r.readAsDataURL(file);
   });
 }
 
@@ -575,14 +801,13 @@ function applyParsed(parsed,st,note){
 async function readSlip(){
   if(!pendingFile)return;
   const st=$('ocrStatus');
-  const useAI = IN_CLAUDE || !!userKey;   // มี AI ให้ใช้หรือไม่
+  const useAI = IN_CLAUDE || !!userKey;
   try{
     if(useAI){
       st.className='ocr show loading';
       st.innerHTML='<span class="spin"></span> กำลังอ่านข้อมูลจากสลิปด้วย AI…';
       applyParsed(await aiParse(), st);
     }else{
-      // โหมดออฟไลน์ ไม่ใช้ API — รองรับเฉพาะรูปภาพ
       if(pendingFile.kind!=='img'){
         st.className='ocr show err';
         st.innerHTML='โหมดออฟไลน์อ่านได้เฉพาะรูปภาพ — สำหรับ PDF กรุณากรอกยอดเอง '
@@ -610,17 +835,24 @@ async function readSlip(){
 }
 function bindRetry(){const r=$('ocrRetry');if(r)r.onclick=e=>{e.preventDefault();readSlip();};}
 
-
 function monthTxs(){
   const y=cur.getFullYear(), m=cur.getMonth();
   return txs.filter(t=>{const d=new Date(t.date);return d.getFullYear()===y&&d.getMonth()===m;});
 }
+function escapeHtml(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
-/* ---------- render ---------- */
+/* ---------- render: header ---------- */
 function renderMonthLabel(){
   $('mlabel').textContent = viewState==='year'
     ? ('ปี '+new Date(cur.getFullYear(),0,1).toLocaleDateString('th-TH',{year:'numeric'}))
     : cur.toLocaleDateString('th-TH',{month:'long',year:'numeric'});
+}
+function renderGreeting(){
+  const h=new Date().getHours();
+  const g = h<12?'สวัสดีตอนเช้า':(h<17?'สวัสดีตอนบ่าย':'สวัสดีตอนค่ำ');
+  const m=memberById(currentMemberId);
+  $('greetHi').textContent = g + (m? (', '+m.name) : '');
+  $('memberChip').innerHTML = avatarHTML(currentMemberId,'sm') + '<span>'+escapeHtml(m?m.name:'สมาชิก')+'</span><span class="cv">เปลี่ยน ▾</span>';
 }
 function renderSummary(){
   const list=monthTxs();
@@ -630,23 +862,71 @@ function renderSummary(){
   $('sumExp').textContent=fmt(exp);
   $('sumBal').textContent=fmt(inc-exp);
 }
+
+/* ---------- render: home ---------- */
+function renderHome(){
+  const list=monthTxs();
+  const spend={};
+  list.filter(t=>t.type==='expense').forEach(t=>{const w=t.who||'?';spend[w]=(spend[w]||0)+t.amount;});
+  const maxSpend=Math.max(1,...Object.values(spend));
+  const recent=list.slice().sort((a,b)=> b.date.localeCompare(a.date) || (b.created||0)-(a.created||0)).slice(0,5);
+  const monthName=cur.toLocaleDateString('th-TH',{month:'long'});
+
+  let memHtml = members.map(m=>{
+    const v=spend[m.id]||0; const pct=Math.round(v/maxSpend*100);
+    return `<div class="mem-row">${avatarHTML(m.id)}
+      <div class="mname"><div class="mn">${escapeHtml(m.name)}</div>
+        <div class="mtrack"><div class="mfill" style="width:${pct}%;background:${m.color}"></div></div></div>
+      <div class="mval">${fmt(v)}<span class="ml">ใช้จ่ายเดือนนี้</span></div></div>`;
+  }).join('');
+
+  let recHtml;
+  if(recent.length){
+    recHtml = recent.map(t=>{
+      return `<div class="tx ${t.type==='income'?'inc':'exp'}">
+        <div class="icon">${CAT_ICON[t.type]}</div>
+        <div class="meta"><div class="cat">${escapeHtml(t.category)}</div>
+          <div class="note">${escapeHtml(memberById(t.who)?memberById(t.who).name:'—')}${t.note?' · '+escapeHtml(t.note):''}</div></div>
+        ${avatarHTML(t.who,'sm')}
+        <div class="amt">${t.type==='income'?'+':'−'}${fmt(t.amount)}</div>
+      </div>`;
+    }).join('');
+  }else{
+    recHtml = '<div class="empty"><div class="big">📒</div>ยังไม่มีรายการในเดือนนี้<div class="sub">แตะปุ่ม + ด้านล่างเพื่อเริ่มบันทึก</div></div>';
+  }
+
+  $('viewHome').innerHTML=`
+    <div class="sec"><h2><span class="bar"></span>สมาชิกครอบครัว</h2>
+      <button class="linkbtn" id="homeManageMem">จัดการ</button></div>
+    <div class="panel"><div class="mem-list">${memHtml}</div></div>
+    <div class="sec"><h2><span class="bar"></span>รายการล่าสุด</h2>
+      <button class="linkbtn" id="homeSeeAll">ดูทั้งหมด</button></div>
+    ${recent.length?recHtml:('<div class="panel">'+recHtml+'</div>')}
+    <div class="sub" style="text-align:center;margin:18px 0 4px;color:var(--ink-faint)">สรุปของเดือน${monthName}</div>`;
+
+  const a=$('homeManageMem'); if(a)a.onclick=openSettings;
+  const b=$('homeSeeAll'); if(b)b.onclick=()=>switchTab('list');
+}
+
+/* ---------- render: list ---------- */
 function listForView(){
   let base = filters.all ? txs.slice() : monthTxs();
   const q=filters.q.trim().toLowerCase();
   return base.filter(t=>{
     if(filters.type!=='all' && t.type!==filters.type) return false;
     if(filters.cat!=='all' && t.category!==filters.cat) return false;
+    if(filters.who!=='all' && (t.who||'')!==filters.who) return false;
     if(q){ const hay=((t.note||'')+' '+t.category).toLowerCase(); if(!hay.includes(q)) return false; }
     return true;
   });
 }
 function renderList(){
-  const list=listForView().sort((a,b)=> b.date.localeCompare(a.date) || b.created-a.created );
+  const list=listForView().sort((a,b)=> b.date.localeCompare(a.date) || (b.created||0)-(a.created||0) );
   const v=$('viewList');
-  const active = filters.q||filters.type!=='all'||filters.cat!=='all'||filters.all;
+  const active = filters.q||filters.type!=='all'||filters.cat!=='all'||filters.who!=='all'||filters.all;
   if(!list.length){
     v.innerHTML='<div class="empty"><div class="big">'+(active?'🔍':'📒')+'</div>'
-      +(active?'ไม่พบรายการที่ตรงกับเงื่อนไข':'ยังไม่มีรายการในเดือนนี้<br>แตะ “เพิ่มรายการ” เพื่อเริ่มบันทึก')+'</div>';
+      +(active?'ไม่พบรายการที่ตรงกับเงื่อนไข':'ยังไม่มีรายการในเดือนนี้<div class="sub">แตะปุ่ม + ด้านล่างเพื่อเริ่มบันทึก</div>')+'</div>';
     return;
   }
   const groups={};
@@ -664,16 +944,19 @@ function renderList(){
       if(t.file){
         att = t.file.kind==='img'
           ? `<img class="thumb" src="${t.file.data}" onclick="showLight('${t.id}')" alt="สลิป">`
-          : `<button class="filebtn" onclick="openPdf('${t.id}')" title="${t.file.name||'ไฟล์'}">📄</button>`;
+          : `<button class="filebtn" onclick="openPdf('${t.id}')" title="${escapeHtml(t.file.name||'ไฟล์')}">📄</button>`;
       }
       html+=`<div class="tx ${t.type==='income'?'inc':'exp'}">
         <div class="icon">${CAT_ICON[t.type]}</div>
-        <div class="meta"><div class="cat">${t.category}</div>
-          ${t.note?`<div class="note">${escapeHtml(t.note)}</div>`:''}</div>
+        <div class="meta"><div class="cat">${escapeHtml(t.category)}</div>
+          <div class="note">${escapeHtml(memberById(t.who)?memberById(t.who).name:'—')}${t.note?' · '+escapeHtml(t.note):''}</div></div>
         ${att}
+        ${avatarHTML(t.who,'sm')}
         <div class="amt">${t.type==='income'?'+':'−'}${fmt(t.amount)}</div>
-        <button class="edit" onclick="editTx('${t.id}')" aria-label="แก้ไข">✎</button>
-        <button class="del" onclick="delTx('${t.id}')" aria-label="ลบ">✕</button>
+        <div class="rowact">
+          <button class="mini edit" onclick="editTx('${t.id}')" aria-label="แก้ไข">✎</button>
+          <button class="mini del" onclick="delTx('${t.id}')" aria-label="ลบ">✕</button>
+        </div>
       </div>`;
     });
     html+='</div>';
@@ -682,12 +965,17 @@ function renderList(){
 }
 function syncFilterCats(){
   const all=[...new Set([...cats.income,...cats.expense])];
-  const sel=$('ffCat'); if(!sel)return;
-  const keep=filters.cat;
-  sel.innerHTML='<option value="all">ทุกประเภท</option>'+all.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
-  if(all.includes(keep))sel.value=keep; else {sel.value='all';filters.cat='all';}
+  const sel=$('ffCat'); if(sel){
+    const keep=filters.cat;
+    sel.innerHTML='<option value="all">ทุกประเภท</option>'+all.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+    if(all.includes(keep))sel.value=keep; else {sel.value='all';filters.cat='all';}
+  }
+  const ws=$('ffWho'); if(ws){
+    const keepW=filters.who;
+    ws.innerHTML='<option value="all">ทุกคน</option>'+members.map(m=>`<option value="${m.id}">${escapeHtml(m.name)}</option>`).join('');
+    if(members.some(m=>m.id===keepW))ws.value=keepW; else {ws.value='all';filters.who='all';}
+  }
 }
-function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
 function totalsForMonth(y,m){
   const list=txs.filter(t=>{const d=new Date(t.date);return d.getFullYear()===y&&d.getMonth()===m;});
@@ -731,17 +1019,18 @@ function renderSum(){
   $('editBudgetBtn').onclick=openBudget;
   renderBudgetList(byCat);
 
+  const grid=cv('--line'), tick=cv('--ink-soft'), surf=cv('--surface');
   if(chartCat)chartCat.destroy(); if(chartDay)chartDay.destroy();
   if(entries.length){
     chartCat=new Chart($('cCat'),{type:'doughnut',
       data:{labels:entries.map(e=>e[0]),datasets:[{data:entries.map(e=>e[1]),
-        backgroundColor:entries.map((_,i)=>PALETTE[i%PALETTE.length]),borderWidth:2,borderColor:'#fff'}]},
+        backgroundColor:entries.map((_,i)=>PALETTE[i%PALETTE.length]),borderWidth:3,borderColor:surf}]},
       options:{responsive:true,maintainAspectRatio:false,cutout:'62%',
         plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+c.label+' '+fmt(c.parsed)}}}}});
     let bd='';
     entries.forEach((e,i)=>{const pct=totalExp?Math.round(e[1]/totalExp*100):0;
       bd+=`<div class="brow"><span class="sw" style="background:${PALETTE[i%PALETTE.length]}"></span>
-        <span class="bname">${e[0]}</span><span class="bpct num">${pct}%</span>
+        <span class="bname">${escapeHtml(e[0])}</span><span class="bpct num">${pct}%</span>
         <span class="bamt num">${fmt(e[1])}</span></div>`;});
     $('bd').innerHTML=bd;
   }else{
@@ -755,13 +1044,13 @@ function renderSum(){
   const labels=Array.from({length:days},(_,i)=>i+1);
   chartDay=new Chart($('cDay'),{type:'bar',
     data:{labels,datasets:[
-      {label:'รายรับ',data:incArr,backgroundColor:'#1F9D6B',borderRadius:4,maxBarThickness:18},
-      {label:'รายจ่าย',data:expArr,backgroundColor:'#D24A40',borderRadius:4,maxBarThickness:18}]},
+      {label:'รายรับ',data:incArr,backgroundColor:cv('--income'),borderRadius:4,maxBarThickness:18},
+      {label:'รายจ่าย',data:expArr,backgroundColor:cv('--expense'),borderRadius:4,maxBarThickness:18}]},
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{position:'bottom',labels:{font:{family:'IBM Plex Sans Thai'},usePointStyle:true}},
+      plugins:{legend:{position:'bottom',labels:{font:{family:'IBM Plex Sans Thai'},usePointStyle:true,color:tick}},
         tooltip:{callbacks:{label:c=>' '+c.dataset.label+' '+fmt(c.parsed.y)}}},
-      scales:{x:{grid:{display:false},ticks:{font:{size:10}}},
-        y:{grid:{color:'#EEF1EE'},ticks:{callback:v=>v>=1000?(v/1000)+'k':v,font:{size:10}}}}}});
+      scales:{x:{grid:{display:false},ticks:{font:{size:10},color:tick}},
+        y:{grid:{color:grid},ticks:{callback:v=>v>=1000?(v/1000)+'k':v,font:{size:10},color:tick}}}}});
 }
 function renderBudgetList(byCat){
   const el=$('budgetList');
@@ -781,18 +1070,26 @@ function renderBudgetList(byCat){
 }
 
 function renderAll(){
-  renderMonthLabel(); renderSummary();
-  if(viewState==='list') renderList();
+  renderMonthLabel(); renderSummary(); renderGreeting();
+  if(viewState==='home') renderHome();
+  else if(viewState==='list') renderList();
   else if(viewState==='sum') renderSum();
   else if(viewState==='year') renderYear();
 }
 function switchTab(name){
   viewState=name;
-  ['List','Sum','Year'].forEach(n=>$('tab'+n).classList.toggle('active', n.toLowerCase()===name));
+  if(name==='home'){ cur=new Date(); cur.setDate(1); }
+  document.querySelectorAll('.bottomnav .nav').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
+  $('viewHome').style.display = name==='home'?'':'none';
   $('viewList').style.display = name==='list'?'':'none';
   $('viewSum').style.display  = name==='sum' ?'':'none';
   $('viewYear').style.display = name==='year'?'':'none';
   $('filterBar').style.display = name==='list'?'flex':'none';
+  $('topCards').style.display = (name==='home'||name==='list')?'':'none';
+  $('monthbar').classList.toggle('show', name!=='home');
+  $('monthbar').style.display = name==='home'?'none':'flex';
+  $('greetRow').classList.toggle('show', name==='home');
+  window.scrollTo(0,0);
   renderAll();
 }
 window.gotoMonth=function(y,mi){ cur=new Date(y,mi,1); switchTab('sum'); };
@@ -817,15 +1114,16 @@ function renderYear(){
     <div class="panel"><h3><span class="bar"></span>สรุปสุทธิรายเดือน</h3>
       <div class="ymtable" id="ymtable"></div>
       <div class="sub" style="margin-top:10px">เฉลี่ยรายจ่าย ${fmt(totExp/monthsActive)} ต่อเดือน · แตะแถวเพื่อดูสรุปเดือนนั้น</div></div>`;
+  const grid=cv('--line'), tick=cv('--ink-soft');
   if(chartYear)chartYear.destroy();
   chartYear=new Chart($('cYear'),{type:'bar',
     data:{labels:thMon,datasets:[
-      {label:'รายรับ',data:incM,backgroundColor:'#1F9D6B',borderRadius:4,maxBarThickness:22},
-      {label:'รายจ่าย',data:expM,backgroundColor:'#D24A40',borderRadius:4,maxBarThickness:22}]},
+      {label:'รายรับ',data:incM,backgroundColor:cv('--income'),borderRadius:4,maxBarThickness:22},
+      {label:'รายจ่าย',data:expM,backgroundColor:cv('--expense'),borderRadius:4,maxBarThickness:22}]},
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{position:'bottom',labels:{font:{family:'IBM Plex Sans Thai'},usePointStyle:true}},
+      plugins:{legend:{position:'bottom',labels:{font:{family:'IBM Plex Sans Thai'},usePointStyle:true,color:tick}},
         tooltip:{callbacks:{label:c=>' '+c.dataset.label+' '+fmt(c.parsed.y)}}},
-      scales:{x:{grid:{display:false}},y:{grid:{color:'#EEF1EE'},ticks:{callback:v=>v>=1000?(v/1000)+'k':v,font:{size:10}}}}}});
+      scales:{x:{grid:{display:false},ticks:{color:tick}},y:{grid:{color:grid},ticks:{callback:v=>v>=1000?(v/1000)+'k':v,font:{size:10},color:tick}}}}});
   let rows='';
   for(let i=0;i<12;i++){ if(!incM[i]&&!expM[i])continue;
     const net=incM[i]-expM[i];
@@ -862,6 +1160,16 @@ function setType(t){
   fillCats();
 }
 
+/* ---------- who chips ---------- */
+function renderWhoChips(){
+  const wrap=$('whoChips');
+  wrap.innerHTML=members.map(m=>`<button type="button" class="whochip ${m.id===selectedWho?'sel':''}" data-who="${m.id}">
+    ${avatarHTML(m.id,'sm')}<span>${escapeHtml(m.name)}</span></button>`).join('');
+  wrap.querySelectorAll('.whochip').forEach(c=>c.onclick=()=>{
+    selectedWho=c.dataset.who; renderWhoChips();
+  });
+}
+
 /* ---------- sheet (add / edit) ---------- */
 function clearFileUI(){
   pendingFile=null;
@@ -875,7 +1183,7 @@ function showFilePreview(){
   $('fileZone').classList.add('has');
   $('fileLabel').innerHTML = pendingFile.kind==='img'
     ? `<div class="preview"><img src="${pendingFile.data}"><span>✓ แนบไฟล์แล้ว — แตะเพื่อเปลี่ยน</span></div>`
-    : `📄 ${pendingFile.name||'ไฟล์ PDF'} — แตะเพื่อเปลี่ยน`;
+    : `📄 ${escapeHtml(pendingFile.name||'ไฟล์ PDF')} — แตะเพื่อเปลี่ยน`;
   $('rmFile').style.display='block';
 }
 function openSheet(){
@@ -884,6 +1192,7 @@ function openSheet(){
   $('saveTx').textContent='บันทึกรายการ';
   $('fAmt').value=''; $('fNote').value=''; $('fNewCat').value='';
   $('fDate').value=new Date().toISOString().slice(0,10);
+  selectedWho=currentMemberId; renderWhoChips();
   clearFileUI(); setType('expense');
   $('overlay').classList.add('show');
 }
@@ -894,6 +1203,7 @@ window.editTx=function(id){
   $('saveTx').textContent='บันทึกการแก้ไข';
   $('fAmt').value=t.amount; $('fNote').value=t.note||''; $('fNewCat').value='';
   $('fDate').value=t.date;
+  selectedWho=(t.who&&members.some(m=>m.id===t.who))?t.who:currentMemberId; renderWhoChips();
   $('ocrStatus').className='ocr'; $('ocrStatus').innerHTML='';
   pendingFile=t.file||null; showFilePreview();
   setType(t.type);
@@ -903,6 +1213,60 @@ window.editTx=function(id){
   $('overlay').classList.add('show');
 };
 function closeSheet(){$('overlay').classList.remove('show'); editingId=null;}
+
+/* ---------- members: switch & manage ---------- */
+function openMemberSwitch(){
+  $('msList').innerHTML=members.map(m=>`<div class="ms-row ${m.id===currentMemberId?'cur':''}" data-id="${m.id}">
+    ${avatarHTML(m.id,'lg')}<div class="msn">${escapeHtml(m.name)}</div>
+    ${m.id===currentMemberId?'<span class="check">✓</span>':''}</div>`).join('');
+  $('msList').querySelectorAll('.ms-row').forEach(r=>r.onclick=async()=>{
+    currentMemberId=r.dataset.id; await saveCurMem();
+    $('memberOverlay').classList.remove('show'); renderAll(); toast('เปลี่ยนเป็น '+memberById(currentMemberId).name);
+  });
+  $('memberOverlay').classList.add('show');
+}
+function renderMemberManager(){
+  const el=$('memberManager');
+  el.innerHTML=members.map(m=>`<div class="mm-row" data-id="${m.id}">
+    ${avatarHTML(m.id)}<span class="mm-name">${escapeHtml(m.name)}</span>
+    <button class="mm-photo" title="รูปโปรไฟล์">📷</button>
+    <button class="mm-edit" title="แก้ไขชื่อ">✎</button>
+    ${members.length>1?'<button class="mm-del" title="ลบ">🗑</button>':''}</div>`).join('');
+  el.querySelectorAll('.mm-row').forEach(row=>{
+    const id=row.dataset.id;
+    const ph=row.querySelector('.mm-photo'); if(ph)ph.onclick=async()=>{
+      const m=memberById(id);
+      if(m.photo){
+        if(confirm('รูปโปรไฟล์ของ '+m.name+'\n\nกด “ตกลง” = เลือกรูปใหม่\nกด “ยกเลิก” = ลบรูป กลับไปใช้ไอคอน')){
+          photoTargetId=id; $('memberPhotoInput').click();
+        }else{
+          delete m.photo; await saveMembers(); renderMemberManager(); renderAll(); toast('ลบรูปแล้ว');
+        }
+      }else{ photoTargetId=id; $('memberPhotoInput').click(); }
+    };
+    const ed=row.querySelector('.mm-edit'); if(ed)ed.onclick=async()=>{
+      const m=memberById(id); const nn=prompt('ชื่อสมาชิก',m.name);
+      if(nn&&nn.trim()){m.name=nn.trim(); await saveMembers(); renderMemberManager(); syncFilterCats(); renderAll();}
+    };
+    const de=row.querySelector('.mm-del'); if(de)de.onclick=async()=>{
+      if(members.length<=1)return;
+      if(!confirm('ลบสมาชิกคนนี้? (รายการเดิมที่บันทึกชื่อคนนี้จะยังอยู่)'))return;
+      members=members.filter(m=>m.id!==id);
+      if(currentMemberId===id){currentMemberId=members[0].id; await saveCurMem();}
+      await saveMembers(); renderMemberManager(); syncFilterCats(); renderAll();
+    };
+  });
+}
+function renderPickers(){
+  const prev = newMemberPhoto
+    ? `<span class="avatar lg" style="background-image:url('${newMemberPhoto}');background-size:cover;background-position:center"></span>`
+    : `<span class="avatar lg" style="background:${newMemberColor}">${escapeHtml(newMemberEmoji)}</span>`;
+  const pv=$('newMemberPreview'); if(pv)pv.innerHTML=prev;
+  $('emojiPicker').innerHTML=AVA_EMOJIS.map(e=>`<button type="button" class="opt ${(!newMemberPhoto&&e===newMemberEmoji)?'sel':''}" data-e="${e}">${e}</button>`).join('');
+  $('colorPicker').innerHTML=AVA_COLORS.map(c=>`<button type="button" class="opt ${c===newMemberColor?'sel':''}" data-c="${c}" style="background:${c}"></button>`).join('');
+  $('emojiPicker').querySelectorAll('.opt').forEach(o=>o.onclick=()=>{newMemberEmoji=o.dataset.e;newMemberPhoto=null;renderPickers();});
+  $('colorPicker').querySelectorAll('.opt').forEach(o=>o.onclick=()=>{newMemberColor=o.dataset.c;renderPickers();});
+}
 
 /* ---------- budget ---------- */
 function openBudget(){
@@ -922,15 +1286,15 @@ function downloadFile(name,content,mime){
   setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},1500);
 }
 function exportJSON(){
-  const payload={app:'สมุดบัญชี',version:1,exportedAt:new Date().toISOString(),txs,cats,budgets};
+  const payload={app:'สมุดบัญชี',version:2,exportedAt:new Date().toISOString(),txs,cats,budgets,members};
   downloadFile('ledger-backup-'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify(payload),'application/json');
   toast('ส่งออกไฟล์สำรองแล้ว');
 }
 function csvEsc(s){s=String(s==null?'':s);return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}
 function exportCSV(){
-  const head=['วันที่','ชนิด','ประเภท','จำนวนเงิน','หมายเหตุ','มีไฟล์แนบ'];
+  const head=['วันที่','ชนิด','ประเภท','ผู้บันทึก','จำนวนเงิน','หมายเหตุ','มีไฟล์แนบ'];
   const rows=txs.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(t=>[
-    t.date, t.type==='income'?'รายรับ':'รายจ่าย', t.category, t.amount, t.note||'', t.file?'มี':''
+    t.date, t.type==='income'?'รายรับ':'รายจ่าย', t.category, (memberById(t.who)?memberById(t.who).name:''), t.amount, t.note||'', t.file?'มี':''
   ].map(csvEsc).join(','));
   downloadFile('ledger-'+new Date().toISOString().slice(0,10)+'.csv','\uFEFF'+head.join(',')+'\n'+rows.join('\n'),'text/csv;charset=utf-8');
   toast('ส่งออก CSV แล้ว');
@@ -944,6 +1308,11 @@ async function importJSON(file){
     if(data.cats){['income','expense'].forEach(k=>{ if(Array.isArray(data.cats[k]))
       data.cats[k].forEach(c=>{ if(!cats[k].includes(c)) cats[k].splice(cats[k].length-1,0,c); }); });}
     if(data.budgets && typeof data.budgets==='object') budgets={...budgets,...data.budgets};
+    if(Array.isArray(data.members)){
+      const ex=new Set(members.map(m=>m.id));
+      data.members.forEach(m=>{ if(m&&m.id&&!ex.has(m.id)) members.push(m); });
+      await saveMembers();
+    }
     await saveTxs(); await saveCats(); await saveBudgets();
     closeSettings(); syncFilterCats(); renderAll();
     toast('นำเข้าสำเร็จ เพิ่ม '+added+' รายการ');
@@ -953,6 +1322,8 @@ async function importJSON(file){
 /* ---------- settings ---------- */
 function openSettings(){
   closeSheet();
+  $('memberOverlay').classList.remove('show');
+  renderMemberManager(); renderPickers();
   $('fKey').value=userKey||'';
   const box=$('setStatusBox');
   if(IN_CLAUDE){ box.className='ocr show ok';
@@ -967,21 +1338,25 @@ function closeSettings(){$('setOverlay').classList.remove('show');}
 
 /* ---------- init ---------- */
 async function init(){
-  $('viewList').innerHTML='<div class="loading">กำลังโหลดข้อมูล…</div>';
+  $('viewHome').innerHTML='<div class="loading">กำลังโหลดข้อมูล…</div>';
   await loadAll();
   syncFilterCats();
-  renderAll();
+  switchTab('home');
+
+  $('themeToggle').onclick=toggleTheme;
+  $('memberChip').onclick=openMemberSwitch;
+  $('manageMembers').onclick=openSettings;
+  $('memberOverlay').onclick=e=>{if(e.target===$('memberOverlay'))$('memberOverlay').classList.remove('show');};
 
   $('prevM').onclick=()=>{ viewState==='year'?cur.setFullYear(cur.getFullYear()-1):cur.setMonth(cur.getMonth()-1); renderAll(); };
   $('nextM').onclick=()=>{ viewState==='year'?cur.setFullYear(cur.getFullYear()+1):cur.setMonth(cur.getMonth()+1); renderAll(); };
-  $('tabList').onclick=()=>switchTab('list');
-  $('tabSum').onclick=()=>switchTab('sum');
-  $('tabYear').onclick=()=>switchTab('year');
+  document.querySelectorAll('.bottomnav .nav').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
 
   // filters
   $('fq').oninput=e=>{filters.q=e.target.value;renderList();};
   $('ffType').onchange=e=>{filters.type=e.target.value;renderList();};
   $('ffCat').onchange=e=>{filters.cat=e.target.value;renderList();};
+  $('ffWho').onchange=e=>{filters.who=e.target.value;renderList();};
   $('ffAll').onchange=e=>{filters.all=e.target.checked;renderList();};
 
   $('openAdd').onclick=openSheet;
@@ -1001,6 +1376,11 @@ async function init(){
 
   $('openSettings').onclick=openSettings;
   $('setOverlay').onclick=e=>{if(e.target===$('setOverlay'))closeSettings();};
+  $('closeSet').onclick=closeSettings;
+  $('doneSet').onclick=closeSettings;
+  $('closeMember').onclick=()=>$('memberOverlay').classList.remove('show');
+  $('closeAdd').onclick=closeSheet;
+  $('closeBudget').onclick=closeBudget;
   $('saveKeyBtn').onclick=async()=>{ userKey=$('fKey').value.trim(); await saveKey();
     closeSettings(); toast(userKey?'บันทึกคีย์แล้ว':'ล้างคีย์แล้ว'); };
   $('clearKey').onclick=async()=>{ userKey=''; $('fKey').value=''; await saveKey(); closeSettings(); toast('ลบคีย์แล้ว'); };
@@ -1008,6 +1388,29 @@ async function init(){
   $('expCsv').onclick=exportCSV;
   $('impJson').onclick=()=>$('impFile').click();
   $('impFile').onchange=e=>{const f=e.target.files[0]; if(f)importJSON(f); e.target.value='';};
+
+  // member add
+  $('memberPhotoInput').onchange=async e=>{
+    const f=e.target.files[0]; e.target.value='';
+    if(!f)return;
+    if(f.size>8*1024*1024){toast('ไฟล์ใหญ่เกินไป (สูงสุด 8MB)');return;}
+    let data; try{ data=await processAvatar(f); }catch(err){ toast('อ่านรูปไม่สำเร็จ'); return; }
+    if(photoTargetId==='__new__'){ newMemberPhoto=data; renderPickers(); }
+    else { const m=memberById(photoTargetId); if(m){ m.photo=data; await saveMembers(); renderMemberManager(); renderAll(); toast('ตั้งรูปโปรไฟล์แล้ว'); } }
+    photoTargetId=null;
+  };
+  $('newPhotoBtn').onclick=()=>{ photoTargetId='__new__'; $('memberPhotoInput').click(); };
+  $('addMemberBtn').onclick=async()=>{
+    const name=$('newMemberName').value.trim(); if(!name){toast('กรอกชื่อสมาชิกก่อน');return;}
+    const id='m'+Date.now()+Math.random().toString(36).slice(2,5);
+    members.push({id,name,color:newMemberColor,emoji:newMemberEmoji,photo:newMemberPhoto||null});
+    await saveMembers();
+    $('newMemberName').value='';
+    newMemberPhoto=null;
+    newMemberEmoji=AVA_EMOJIS[Math.floor(Math.random()*AVA_EMOJIS.length)];
+    newMemberColor=AVA_COLORS[members.length%AVA_COLORS.length];
+    renderMemberManager(); renderPickers(); syncFilterCats(); renderAll(); toast('เพิ่มสมาชิกแล้ว');
+  };
 
   $('addCat').onclick=async()=>{
     const name=$('fNewCat').value.trim(); if(!name)return;
@@ -1030,7 +1433,8 @@ async function init(){
   $('saveTx').onclick=async()=>{
     const amt=parseFloat($('fAmt').value);
     if(!amt||amt<=0){toast('กรุณากรอกจำนวนเงิน');$('fAmt').focus();return;}
-    const d={type:curType,amount:amt,category:$('fCat').value,date:$('fDate').value,note:$('fNote').value.trim(),file:pendingFile};
+    const d={type:curType,amount:amt,category:$('fCat').value,date:$('fDate').value,
+      note:$('fNote').value.trim(),file:pendingFile,who:selectedWho||currentMemberId};
     let edited=!!editingId;
     if(edited){ const t=txs.find(x=>x.id===editingId); if(t)Object.assign(t,d); }
     else { txs.push({id:'t'+Date.now()+Math.random().toString(36).slice(2,6),...d,created:Date.now()}); }
